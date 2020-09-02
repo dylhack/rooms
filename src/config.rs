@@ -39,10 +39,7 @@ impl Config {
                     location,
                 };
                 conf.save();
-                panic!(
-                    "Saved a new config, please fill it out \n{}",
-                    &conf.location,
-                );
+                return conf;
             }
         }
     }

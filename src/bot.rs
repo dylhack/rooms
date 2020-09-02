@@ -35,7 +35,7 @@ pub async fn start(config: Config) {
         data.insert::<Config>(config);
     }
 
-    if let Err(why) = client.start().await {
-        panic!("Failed to start bot because\n{}", why);
+    if let Err(_) = client.start().await {
+        println!("Failed to login, is the token correct?");
     }
 }
