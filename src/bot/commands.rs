@@ -1,5 +1,5 @@
-use serenity::prelude::RwLock;
-use typemap::TypeMap;
+use crate::config::Room;
+use serenity::framework::standard::CommandError;
 use crate::config::Serving;
 use crate::config::Config;
 use crate::bot::util;
@@ -58,13 +58,69 @@ fn auth(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> C
 }
 
 fn check_perms(perms: &Permissions) -> bool {
-    return perms.manage_channels();
+    return perms.administrator() || perms.manage_channels();
 }
 
 #[command]
-fn link(ctx: &mut Context, msg: &Message) -> CommandResult {
+fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut data = ctx.data.write();
-    let mut config = data.get::<Config>().unwrap();
+    let config = data.get_mut::<Config>().unwrap();
+    let mut serving;
+
+    if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
+        serving = _s.clone();
+    } else {
+        if let Some(guild_id) = msg.guild_id {
+            serving = Serving{
+                guild_id,
+                rooms: Vec::<Room>::new(),
+            };
+        } else {
+            util::bad(ctx, msg);
+            return Err(CommandError("Please use this command in a guild.".to_string()));
+        }
+    }
+
+    let channels = util::parse_channels(msg, &mut args);
+    let text;
+    let voice;
+
+
+    match channels {
+        Some((_voice, _text)) => {
+            voice = _voice; 
+            text = _text;
+        },
+        None => {
+            util::bad(ctx, msg);
+            return Err(CommandError("Please mention a text channel and ID of the voice channel.".to_string()))
+        }
+    }
+
+    for room in serving.rooms.iter() {
+        if room.voice_id == voice || room.text_id == text {
+            util::bad(ctx, msg);
+            if room.voice_id == voice {
+                return Err(CommandError("That voice channel is already linked with something.".to_string()))
+            } else {
+                return Err(CommandError("That text channel is already linked with something.".to_string()))
+            }
+        }
+    }
+
+    let mut update = |serving: Serving| {
+        let mut data = ctx.data.write();
+        config.serving.insert(*serving.guild_id.as_u64(), serving);
+        data.insert::<Config>(config.clone());
+    };
+
+    let room = Room{
+        voice_id: voice,
+        text_id: text,
+    };
+
+    serving.rooms.push(room);
+    update(serving);
     Ok(())
 }
 
@@ -72,7 +128,6 @@ fn link(ctx: &mut Context, msg: &Message) -> CommandResult {
 // Args = #channel or channel ID
 fn unlink(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
     let mut serving;
-    
     let mut data = ctx.data.write();
     let config = data.get_mut::<Config>().unwrap();
 

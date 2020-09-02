@@ -1,9 +1,44 @@
+use serenity::framework::standard::Args;
 use serenity::client::Context;
 use crate::config::Room;
 use std::sync::Arc;
 use serenity::prelude::RwLock;
 use serenity::model::prelude::*;
 
+
+// Get the channels a user might be talking about in a message.
+// args can be [<#channel id>, channel id] or reversed
+pub fn parse_channels(msg: &Message, args: &mut Args) -> Option<(ChannelId, ChannelId)> {
+    let text;
+    let mut voice = ChannelId(0);
+
+    if let Some(channels) = &msg.mention_channels {
+        if channels.is_empty() {
+            return None;
+        }
+        text = channels[0].id;
+    } else {
+        return None;
+    }
+
+    for _arg in args.iter::<String>() {
+        match _arg {
+            Err(_) => return None,
+            Ok(arg) => {
+                if let Ok(channel_id) = arg.parse::<u64>() {
+                    voice = ChannelId(channel_id);
+                }
+            },
+        }
+    };
+
+    let empty: u64 = 0;
+    if text.eq(&empty) || voice.eq(&empty) {
+        return None;
+    } else {
+        return Some((voice, text));
+    }
+}
 
 pub fn respond(ctx: &Context, msg: &Message, body: &String) {
     let res = format!("<@{}>, {}", msg.author.id, body);
