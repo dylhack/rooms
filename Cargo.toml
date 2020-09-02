@@ -7,7 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serenity = "0.8.7"
+serenity = "0.9.0-rc.0"
 serde = "1.0.115"
 serde_yaml = "0.8.13"
 typemap = "0.3.3"
+
+[dependencies.tokio]
+version = "0.2.22"
+features = ["macros"]

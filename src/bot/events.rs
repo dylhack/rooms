@@ -5,21 +5,22 @@ use serenity::prelude::*;
 
 pub struct Handler;
 
+#[serenity::async_trait]
 impl EventHandler for Handler {
-    fn ready(&self, _ctx: Context, rdy: Ready) {
+    async fn ready(&self, _ctx: Context, rdy: Ready) {
         let us = &rdy.user;
 
         println!("Ready as {}#{}", us.name, us.discriminator);
     }
 
-    fn voice_state_update(
+    async fn voice_state_update(
         &self,
         ctx: Context,
         opt_guild_id: Option<GuildId>,
         opt_old: Option<VoiceState>,
         new: VoiceState,
     ) {
-        let data = ctx.data.read();
+        let data = ctx.data.read().await;
         let config = data.get::<Config>().expect("Failed to retrieve config");
         let serving: &Serving;
 
@@ -38,7 +39,7 @@ impl EventHandler for Handler {
         if let Some(old) = opt_old {
             if let Some(old_id) = old.channel_id {
                 if let Some(room) = get_room(serving, &old_id) {
-                    core::review(&ctx, &room);
+                    core::review(&ctx, &room).await;
                 }
             }
         }
@@ -46,7 +47,7 @@ impl EventHandler for Handler {
         // // Review the voice channel they're joining
         if let Some(new_id) = new.channel_id {
             if let Some(room) = get_room(serving, &new_id) {
-                core::review(&ctx, &room);
+                core::review(&ctx, &room).await;
             }
         }
     }

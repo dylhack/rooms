@@ -1,16 +1,20 @@
-use crate::bot::util;
-use crate::config::Config;
-use crate::config::Room;
-use crate::config::Serving;
-use serenity::client::Context;
-use serenity::framework::standard::macros::{check, command, group};
-use serenity::framework::standard::CheckResult::*;
-use serenity::framework::standard::CommandError;
 use serenity::framework::standard::Reason::User;
+use serenity::model::prelude::*;
+use crate::bot::util;
+use serenity::framework::standard::CheckResult::{Failure, Success};
+use crate::config::{
+    Config,
+    Room,
+    Serving,
+};
+use serenity::client::Context;
+use serenity::framework::standard::macros::{
+    check, 
+    command, 
+    group,
+};
 use serenity::framework::standard::*;
-use serenity::model::channel::Message;
-use serenity::model::prelude::ChannelId;
-use serenity::model::Permissions;
+
 
 #[group()]
 #[commands(link, unlink)]
@@ -23,7 +27,7 @@ pub struct Commands;
 
 #[check()]
 #[name("auth")]
-fn auth(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> CheckResult {
+async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let guild_id;
 
     if let Some(_guild_id) = msg.guild_id {
@@ -34,13 +38,12 @@ fn auth(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> C
         ));
     }
 
-    let guild_rw;
-    if let Some(_guild) = guild_id.to_guild_cached(ctx) {
-        guild_rw = _guild;
+    let guild;
+    if let Some(_guild) = guild_id.to_guild_cached(ctx).await {
+        guild = _guild;
     } else {
         return Failure(User("Failed to fetch this guild in cache.".to_string()));
     }
-    let guild = guild_rw.read();
     let mut perms = guild.member_permissions(msg.author.id);
 
     if check_perms(&perms) {
@@ -63,8 +66,8 @@ fn check_perms(perms: &Permissions) -> bool {
 }
 
 #[command]
-fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
-    let mut data = ctx.data.write();
+async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let mut data = ctx.data.write().await;
     let mut config = data.get_mut::<Config>().unwrap().clone();
     let mut serving;
 
@@ -78,13 +81,13 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             };
         } else {
             let res = "Please use this command in a guild.".to_string();
-            util::bad(ctx, msg);
-            util::respond(ctx, msg, &res);
-            return Err(CommandError(res));
+            util::bad(ctx, msg).await;
+            util::respond(ctx, msg, &res).await;
+            return Ok(());
         }
     }
 
-    let channels = util::parse_channels(ctx, &mut args);
+    let channels = util::parse_channels(ctx, &mut args).await;
     let text;
     let voice;
 
@@ -95,23 +98,23 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         }
         None => {
             let res = "Please mention a text channel and ID of the voice channel.".to_string();
-            util::bad(ctx, msg);
-            util::respond(ctx, msg, &res);
-            return Err(CommandError(res));
+            util::bad(ctx, msg).await;
+            util::respond(ctx, msg, &res).await;
+            return Ok(());
         }
     }
 
     for room in serving.rooms.iter() {
         if room.voice_id == voice.id() || room.text_id == text.id() {
-            util::bad(ctx, msg);
+            util::bad(ctx, msg).await;
             let res;
             if room.voice_id == voice.id() {
                 res = "That voice channel is already linked with something.".to_string();
             } else {
                 res = "That text channel is already linked with something.".to_string();
             }
-            util::respond(ctx, msg, &res);
-            return Err(CommandError(res));
+            util::respond(ctx, msg, &res).await;
+            return Ok(());
         }
     }
 
@@ -124,24 +127,24 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     config.serving.insert(*serving.guild_id.as_u64(), serving);
     config.save();
     data.insert::<Config>(config.clone());
-    util::good(ctx, msg);
+    util::good(ctx, msg).await;
     Ok(())
 }
 
 #[command]
 // Args = #channel or channel ID
-fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
     let mut config;
     {
-        let mut data = ctx.data.write();
+        let mut data = ctx.data.write().await;
         config = data.get_mut::<Config>().unwrap().clone();
     }
 
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s.clone();
     } else {
-        util::good(ctx, msg);
+        util::good(ctx, msg).await;
         return Ok(());
     }
 
@@ -170,7 +173,7 @@ fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 
     for channel_id in channel_ids {
         let mut i = 0;
-        match channel_id.to_channel(&ctx) {
+        match channel_id.to_channel(ctx).await {
             Ok(channel) => {
                 for room in serving.rooms.clone().iter() {
                     if room.text_id == channel.id() {
@@ -195,30 +198,30 @@ fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     {
-        let mut data = ctx.data.write();
+        let mut data = ctx.data.write().await;
         config.serving.insert(*serving.guild_id.as_u64(), serving);
         config.save();
         data.insert::<Config>(config.clone());
     }
 
     if !unlinked.is_empty() && not_unlinked.is_empty() {
-        util::respond(ctx, msg, &unlinked);
-        util::good(ctx, msg);
+        util::respond(ctx, msg, &unlinked).await;
+        util::good(ctx, msg).await;
     } else if unlinked.is_empty() && !not_unlinked.is_empty() {
-        util::respond(ctx, msg, &not_unlinked);
-        util::bad(ctx, msg);
+        util::respond(ctx, msg, &not_unlinked).await;
+        util::bad(ctx, msg).await;
     } else if !unlinked.is_empty() && !not_unlinked.is_empty() {
-        util::respond(ctx, msg, &unlinked);
-        util::respond(ctx, msg, &not_unlinked);
-        util::warn(ctx, msg);
+        util::respond(ctx, msg, &unlinked).await;
+        util::respond(ctx, msg, &not_unlinked).await;
+        util::warn(ctx, msg).await;
     }
 
     Ok(())
 }
 
 #[command]
-fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
-    let data = ctx.data.read();
+async fn list(ctx: &Context, msg: &Message) -> CommandResult {
+    let data = ctx.data.read().await;
     let config = data.get::<Config>().unwrap();
     let serving;
 
@@ -229,8 +232,8 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
             &ctx,
             &msg,
             &"This server doesn't have any channels linked.".to_string(),
-        );
-        util::good(ctx, msg);
+        ).await;
+        util::good(ctx, msg).await;
         return Ok(());
     }
 
@@ -251,10 +254,10 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
 
         let list_item: String;
 
-        match room.voice_id.to_channel(&ctx) {
+        match room.voice_id.to_channel(ctx).await {
             Ok(voice) => {
                 if let Some(guild_chan) = voice.guild() {
-                    list_item = with_name(&guild_chan.read().name);
+                    list_item = with_name(&guild_chan.name);
                 } else {
                     list_item = without_name();
                 }
@@ -267,7 +270,7 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
         list.push_str(list_item.as_str());
     }
 
-    util::respond(&ctx, &msg, &list);
-    util::good(ctx, msg);
+    util::respond(&ctx, &msg, &list).await;
+    util::good(ctx, msg).await;
     Ok(())
 }

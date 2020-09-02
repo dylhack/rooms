@@ -4,24 +4,22 @@ use crate::config::Room;
 use serenity::client::Context;
 use serenity::model::prelude::*;
 
-pub fn review(ctx: &Context, room: &Room) {
-    let channels = get_channels(ctx, room);
-    let voice_rw;
-    let text_rw;
+pub async fn review(ctx: &Context, room: &Room) {
+    let channels = get_channels(ctx, room).await;
+    let voice;
+    let text;
 
     match channels {
         Some((_voice, _text)) => {
-            voice_rw = _voice;
-            text_rw = _text;
+            voice = _voice;
+            text = _text;
         }
         None => return,
     }
 
-    let voice = voice_rw.read();
-    let text = text_rw.read();
     let mut members: Vec<Member>;
 
-    match voice.members(ctx) {
+    match voice.members(&ctx).await {
         Ok(_members) => members = _members,
         Err(_) => return,
     }
@@ -29,10 +27,10 @@ pub fn review(ctx: &Context, room: &Room) {
     let mut i = 0;
     while i != members.len() {
         let member = &members[i].clone();
-        let user = &member.user.read();
-        if let Ok(perms) = text.permissions_for_user(&ctx, &user.id) {
+        let user = &member.user;
+        if let Ok(perms) = text.permissions_for_user(&ctx, &user.id).await {
             if !perms.read_messages() {
-                grant_access(&ctx, &text, user.id);
+                grant_access(&ctx, &text, user.id).await;
                 members.remove(i);
             }
         }
@@ -44,8 +42,8 @@ pub fn review(ctx: &Context, room: &Room) {
     while i != members.len() {
         i += 1;
         let member = &members[i].clone();
-        let user = &member.user.read();
-        if let Err(why) = text.delete_permission(ctx, PermissionOverwriteType::Member(user.id)) {
+        let user = &member.user;
+        if let Err(why) = text.delete_permission(ctx, PermissionOverwriteType::Member(user.id)).await {
             println!("Failed to revoke {} access because\n{}", user.id, why);
         }
     }
