@@ -8,15 +8,15 @@ use serenity::model::prelude::*;
 
 // Get the channels a user might be talking about in a message.
 // args can be [<#channel id>, channel id] or reversed
-pub fn parse_channels(msg: &Message, args: &mut Args) -> Option<(ChannelId, ChannelId)> {
-    let text;
-    let mut voice = ChannelId(0);
+pub fn parse_channels(ctx: &Context, msg: &Message, args: &mut Args) -> Option<(Channel, Channel)> {
+    let text_id;
+    let mut voice_id = ChannelId(0);
 
     if let Some(channels) = &msg.mention_channels {
         if channels.is_empty() {
             return None;
         }
-        text = channels[0].id;
+        text_id = channels[0].id;
     } else {
         return None;
     }
@@ -26,18 +26,25 @@ pub fn parse_channels(msg: &Message, args: &mut Args) -> Option<(ChannelId, Chan
             Err(_) => return None,
             Ok(arg) => {
                 if let Ok(channel_id) = arg.parse::<u64>() {
-                    voice = ChannelId(channel_id);
+                    voice_id = ChannelId(channel_id);
                 }
             },
         }
     };
 
-    let empty: u64 = 0;
-    if text.eq(&empty) || voice.eq(&empty) {
-        return None;
-    } else {
-        return Some((voice, text));
+    let text;
+    let voice;
+
+    match text_id.to_channel(ctx) {
+        Ok(chan) => text = chan,
+        Err(_) => return None,
     }
+    match voice_id.to_channel(ctx) {
+        Ok(chan) => voice = chan,
+        Err(_) => return None,
+    }
+
+    return Some((voice, text));
 }
 
 pub fn respond(ctx: &Context, msg: &Message, body: &String) {

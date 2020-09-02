@@ -81,7 +81,7 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
-    let channels = util::parse_channels(msg, &mut args);
+    let channels = util::parse_channels(ctx, msg, &mut args);
     let text;
     let voice;
 
@@ -98,9 +98,9 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     for room in serving.rooms.iter() {
-        if room.voice_id == voice || room.text_id == text {
+        if room.voice_id == voice.id() || room.text_id == text.id() {
             util::bad(ctx, msg);
-            if room.voice_id == voice {
+            if room.voice_id == voice.id() {
                 return Err(CommandError("That voice channel is already linked with something.".to_string()))
             } else {
                 return Err(CommandError("That text channel is already linked with something.".to_string()))
@@ -115,8 +115,8 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     let room = Room{
-        voice_id: voice,
-        text_id: text,
+        voice_id: voice.id(),
+        text_id: text.id(),
     };
 
     serving.rooms.push(room);
