@@ -1,3 +1,6 @@
+use serenity::prelude::RwLock;
+use typemap::TypeMap;
+use crate::config::Serving;
 use crate::config::Config;
 use crate::bot::util;
 use serenity::client::Context;
@@ -66,9 +69,52 @@ fn link(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-fn unlink(ctx: &mut Context, msg: &Message) -> CommandResult {
+// Args = #channel or channel ID
+fn unlink(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+    let mut serving;
+    
     let mut data = ctx.data.write();
-    let mut config = data.get::<Config>().unwrap();
+    let config = data.get_mut::<Config>().unwrap();
+
+
+    if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
+        serving = _s.clone();
+    } else {
+        util::good(ctx, msg);
+        return Ok(());
+    }
+
+    let mut update = |serving: Serving| {
+        let mut data = ctx.data.write();
+        config.serving.insert(*serving.guild_id.as_u64(), serving);
+        data.insert::<Config>(config.clone());
+    };
+
+
+    if let Some(channels) = &msg.mention_channels {
+        if !channels.is_empty() {
+            let mut unlinked = String::from("Unlinked: \n");
+            for channel in channels.iter() {
+                let mut i = 0;
+                for room in serving.rooms.clone().iter() {
+                    if room.text_id.as_u64() == channel.id.as_u64() {
+                        serving.rooms.remove(i);
+                        unlinked.push_str(format!(" - <#{}>\n", channel.id).as_str());
+                        continue;
+                    }
+                    i += 1;
+                }
+            }
+            util::respond(ctx, msg, &unlinked);
+            util::good(ctx, msg);
+            update(serving);
+            
+            return Ok(());
+        }
+    }
+
+
+
     Ok(())
 }
 
@@ -82,6 +128,7 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
         serving = _s;
     } else {
         util::respond(&ctx, &msg, &"This server doesn't have any channels linked.".to_string());
+        util::good(ctx, msg);
         return Ok(());
     }
 
@@ -121,6 +168,6 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
     }
 
     util::respond(&ctx, &msg, &list);
-
+    util::good(ctx, msg);
     Ok(())
 }

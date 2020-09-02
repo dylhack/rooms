@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 // Serving represents a guild the bot is serving
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Serving {
     pub guild_id: GuildId,
     pub rooms: Vec<Room>,
@@ -19,7 +19,7 @@ pub struct Room {
     pub text_id: ChannelId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Config {
     pub token: String,
     pub prefix: String,

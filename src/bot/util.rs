@@ -12,6 +12,22 @@ pub fn respond(ctx: &Context, msg: &Message, body: &String) {
     }
 }
 
+// good reacts to a message when a user used a command correctly
+pub fn good(ctx: &Context, msg: &Message) {
+    react(ctx, msg, "".to_string())
+}
+
+// bad reacts to a message when a user used a command incorrectly
+pub fn bad(ctx: &Context, msg: &Message) {
+    react(ctx, msg, "".to_string())
+}
+
+fn react(ctx: &Context, msg: &Message, unicode: String) {
+    if let Err(why) = msg.react(ctx, ReactionType::Unicode(unicode)) {
+        println!("Failed to react to {} because\n{}", msg.author.id, why);
+    }
+}
+
 pub fn get_channels(
     ctx: &Context,
     room: &Room,
