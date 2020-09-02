@@ -2,7 +2,7 @@
 This bot automatically hides text-channels until a user is in a "linked" voice channel.
 
 ## Active Bot
-[Click Here!](https://discord.com/api/oauth2/authorize?client_id=750816469557837926&permissions=3152&scope=bot)
+[Click Here!](https://discord.com/oauth2/authorize?client_id=750816469557837926&scope=bot&permissions=268438592)
 
 ## Commands
 To add link a text-channel with a voice channel
