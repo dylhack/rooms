@@ -8,18 +8,9 @@ use serenity::model::prelude::*;
 
 // Get the channels a user might be talking about in a message.
 // args can be [<#channel id>, channel id] or reversed
-pub fn parse_channels(ctx: &Context, msg: &Message, args: &mut Args) -> Option<(Channel, Channel)> {
-    let text_id;
+pub fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, Channel)> {
+    let mut text_id = ChannelId(0);
     let mut voice_id = ChannelId(0);
-
-    if let Some(channels) = &msg.mention_channels {
-        if channels.is_empty() {
-            return None;
-        }
-        text_id = channels[0].id;
-    } else {
-        return None;
-    }
 
     for _arg in args.iter::<String>() {
         match _arg {
@@ -27,6 +18,12 @@ pub fn parse_channels(ctx: &Context, msg: &Message, args: &mut Args) -> Option<(
             Ok(arg) => {
                 if let Ok(channel_id) = arg.parse::<u64>() {
                     voice_id = ChannelId(channel_id);
+                } else if arg.starts_with("<#") {
+                    if let Some(extract) = arg.get(2..arg.len() - 1) {  
+                        if let Ok(channel_id) = extract.parse::<u64>() {
+                            text_id = ChannelId(channel_id);
+                        }
+                    }
                 }
             },
         }
@@ -56,12 +53,12 @@ pub fn respond(ctx: &Context, msg: &Message, body: &String) {
 
 // good reacts to a message when a user used a command correctly
 pub fn good(ctx: &Context, msg: &Message) {
-    react(ctx, msg, "".to_string())
+    react(ctx, msg, "✅".to_string())
 }
 
 // bad reacts to a message when a user used a command incorrectly
 pub fn bad(ctx: &Context, msg: &Message) {
-    react(ctx, msg, "".to_string())
+    react(ctx, msg, "❌".to_string())
 }
 
 fn react(ctx: &Context, msg: &Message, unicode: String) {

@@ -64,7 +64,7 @@ fn check_perms(perms: &Permissions) -> bool {
 #[command]
 fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut data = ctx.data.write();
-    let config = data.get_mut::<Config>().unwrap();
+    let mut config = data.get_mut::<Config>().unwrap().clone();
     let mut serving;
 
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
@@ -76,12 +76,14 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 rooms: Vec::<Room>::new(),
             };
         } else {
+            let res = "Please use this command in a guild.".to_string();
             util::bad(ctx, msg);
-            return Err(CommandError("Please use this command in a guild.".to_string()));
+            util::respond(ctx, msg, &res);
+            return Err(CommandError(res));
         }
     }
 
-    let channels = util::parse_channels(ctx, msg, &mut args);
+    let channels = util::parse_channels(ctx, &mut args);
     let text;
     let voice;
 
@@ -92,27 +94,27 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             text = _text;
         },
         None => {
+            let res = "Please mention a text channel and ID of the voice channel.".to_string();
             util::bad(ctx, msg);
-            return Err(CommandError("Please mention a text channel and ID of the voice channel.".to_string()))
+            util::respond(ctx, msg, &res);
+            return Err(CommandError(res))
         }
     }
 
     for room in serving.rooms.iter() {
         if room.voice_id == voice.id() || room.text_id == text.id() {
             util::bad(ctx, msg);
+            let res;
             if room.voice_id == voice.id() {
-                return Err(CommandError("That voice channel is already linked with something.".to_string()))
+                res = "That voice channel is already linked with something.".to_string();
             } else {
-                return Err(CommandError("That text channel is already linked with something.".to_string()))
+                res = "That text channel is already linked with something.".to_string();
             }
+            util::respond(ctx, msg, &res);
+            return Err(CommandError(res))
         }
     }
 
-    let mut update = |serving: Serving| {
-        let mut data = ctx.data.write();
-        config.serving.insert(*serving.guild_id.as_u64(), serving);
-        data.insert::<Config>(config.clone());
-    };
 
     let room = Room{
         voice_id: voice.id(),
@@ -120,16 +122,19 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     serving.rooms.push(room);
-    update(serving);
+    config.serving.insert(*serving.guild_id.as_u64(), serving);
+    config.save();
+    data.insert::<Config>(config.clone());
+    util::good(ctx, msg);
     Ok(())
 }
 
 #[command]
 // Args = #channel or channel ID
-fn unlink(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
     let mut data = ctx.data.write();
-    let config = data.get_mut::<Config>().unwrap();
+    let mut config = data.get_mut::<Config>().unwrap().clone();
 
 
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
@@ -140,12 +145,14 @@ fn unlink(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
     }
 
     let mut update = |serving: Serving| {
-        let mut data = ctx.data.write();
         config.serving.insert(*serving.guild_id.as_u64(), serving);
         data.insert::<Config>(config.clone());
     };
 
+    let channel_id = Vec::<ChannelId>::new();
+    for arg in args.iter::<String>() {
 
+    }
     if let Some(channels) = &msg.mention_channels {
         if !channels.is_empty() {
             let mut unlinked = String::from("Unlinked: \n");
