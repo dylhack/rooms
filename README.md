@@ -6,13 +6,13 @@ This bot automatically hides text-channels until a user is in a "linked" voice c
 
 ## Commands
 To add link a text-channel with a voice channel
- * .link add `#channel` `voice channel ID`
+ * .add `#channel` `voice channel ID`
 
 To remove a link
- * .link remove `#channel` or `voice channel ID`
+ * .remove `#channel` or `voice channel ID`
 
 To list all your linked channels
- * .link list
+ * .list
 
 
 ## Run Your own Instance
