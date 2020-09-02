@@ -122,8 +122,8 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
-#[command]
 // Args = #channel or channel ID
+#[command]
 async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
     let mut config;
