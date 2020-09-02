@@ -1,0 +1,62 @@
+use crate::bot;
+use crate::config::{Config, Room, Serving};
+use serenity::model::prelude::*;
+use serenity::prelude::*;
+
+pub struct Handler;
+
+impl EventHandler for Handler {
+    fn ready(&self, _ctx: Context, rdy: Ready) {
+        let us = &rdy.user;
+
+        println!("Ready as {}#{}", us.name, us.discriminator);
+    }
+
+    fn voice_state_update(
+        &self,
+        ctx: Context,
+        opt_guild_id: Option<GuildId>,
+        opt_old: Option<VoiceState>,
+        new: VoiceState,
+    ) {
+        let data = ctx.data.read();
+        let config = data.get::<Config>().expect("Failed to retrieve config");
+        let serving: &Serving;
+
+        match opt_guild_id {
+            Some(guild_id) => {
+                if let Some(_serving) = config.serving.get(guild_id.as_u64()) {
+                    serving = _serving;
+                } else {
+                    return;
+                }
+            }
+            None => return,
+        }
+
+        // Review the voice channel they left
+        if let Some(old) = opt_old {
+            if let Some(old_id) = old.channel_id {
+                if let Some(room) = get_room(serving, &old_id) {
+                    bot::review(&ctx, &room);
+                }
+            }
+        }
+
+        // // Review the voice channel they're joining
+        if let Some(new_id) = new.channel_id {
+            if let Some(room) = get_room(serving, &new_id) {
+                bot::review(&ctx, &room);
+            }
+        }
+    }
+}
+
+fn get_room(serving: &Serving, id: &ChannelId) -> Option<Room> {
+    for room in serving.rooms.iter() {
+        if room.voice_id.as_u64() == id.as_u64() {
+            return Some(room.clone());
+        }
+    }
+    return None;
+}
