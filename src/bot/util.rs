@@ -3,8 +3,6 @@ use serenity::client::Context;
 use serenity::framework::standard::Args;
 use serenity::model::prelude::*;
 
-
-
 // Get the channels a user might be talking about in a message.
 // args can be [<#channel id>, channel id] or reversed
 pub async fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, Channel)> {
@@ -73,10 +71,7 @@ async fn react(ctx: &Context, msg: &Message, unicode: String) {
     }
 }
 
-pub async fn get_channels(
-    ctx: &Context,
-    room: &Room,
-) -> Option<(GuildChannel, GuildChannel)> {
+pub async fn get_channels(ctx: &Context, room: &Room) -> Option<(GuildChannel, GuildChannel)> {
     let mut channel_rw;
 
     if let Ok(_channel) = room.voice_id.to_channel(ctx).await {

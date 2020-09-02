@@ -1,6 +1,5 @@
 use crate::config::Config;
 
-
 mod bot;
 mod config;
 

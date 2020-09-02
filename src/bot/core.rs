@@ -43,7 +43,10 @@ pub async fn review(ctx: &Context, room: &Room) {
         i += 1;
         let member = &members[i].clone();
         let user = &member.user;
-        if let Err(why) = text.delete_permission(ctx, PermissionOverwriteType::Member(user.id)).await {
+        if let Err(why) = text
+            .delete_permission(ctx, PermissionOverwriteType::Member(user.id))
+            .await
+        {
             println!("Failed to revoke {} access because\n{}", user.id, why);
         }
     }

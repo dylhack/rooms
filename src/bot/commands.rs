@@ -1,20 +1,11 @@
-use serenity::framework::standard::Reason::User;
-use serenity::model::prelude::*;
 use crate::bot::util;
-use serenity::framework::standard::CheckResult::{Failure, Success};
-use crate::config::{
-    Config,
-    Room,
-    Serving,
-};
+use crate::config::{Config, Room, Serving};
 use serenity::client::Context;
-use serenity::framework::standard::macros::{
-    check, 
-    command, 
-    group,
-};
+use serenity::framework::standard::macros::{check, command, group};
+use serenity::framework::standard::CheckResult::{Failure, Success};
+use serenity::framework::standard::Reason::User;
 use serenity::framework::standard::*;
-
+use serenity::model::prelude::*;
 
 #[group()]
 #[commands(link, unlink)]
@@ -232,7 +223,8 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
             &ctx,
             &msg,
             &"This server doesn't have any channels linked.".to_string(),
-        ).await;
+        )
+        .await;
         util::good(ctx, msg).await;
         return Ok(());
     }
