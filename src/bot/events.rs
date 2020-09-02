@@ -1,4 +1,4 @@
-use crate::bot;
+use crate::bot::core;
 use crate::config::{Config, Room, Serving};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
@@ -38,7 +38,7 @@ impl EventHandler for Handler {
         if let Some(old) = opt_old {
             if let Some(old_id) = old.channel_id {
                 if let Some(room) = get_room(serving, &old_id) {
-                    bot::review(&ctx, &room);
+                    core::review(&ctx, &room);
                 }
             }
         }
@@ -46,7 +46,7 @@ impl EventHandler for Handler {
         // // Review the voice channel they're joining
         if let Some(new_id) = new.channel_id {
             if let Some(room) = get_room(serving, &new_id) {
-                bot::review(&ctx, &room);
+                core::review(&ctx, &room);
             }
         }
     }

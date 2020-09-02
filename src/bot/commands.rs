@@ -82,8 +82,8 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
         serving = _s;
     } else {
         response = "This server doesn't have any channels linked.";
-        if Err(why) = msg.channel_id.say(&ctx, response) {
-            println!("Failed to respond to {}# in {}",);
+        if let Err(why) = msg.channel_id.say(&ctx, response) {
+            println!("Failed to send message because\n{}",why);
         }
         return Ok(());
     }
