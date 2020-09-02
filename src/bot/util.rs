@@ -107,7 +107,28 @@ pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId)
         kind: PermissionOverwriteType::Member(member_id),
     };
 
-    if let Err(why) = text.create_permission(ctx, &overwrite).await {
+    manage_access(ctx, text, &overwrite, member_id).await;
+    println!("Granted access for {} in {}", member_id, text.id);
+}
+
+pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
+    let overwrite = PermissionOverwrite {
+        allow: Permissions::empty(),
+        deny: Permissions::SEND_MESSAGES,
+        kind: PermissionOverwriteType::Member(member_id),
+    };
+
+    manage_access(ctx, text, &overwrite, member_id).await;
+    println!("Revoked access for {} in {}", member_id, text.id);
+}
+
+async fn manage_access(
+    ctx: &Context,
+    text: &GuildChannel,
+    overwrite: &PermissionOverwrite,
+    member_id: UserId,
+) {
+    if let Err(why) = text.create_permission(ctx, overwrite).await {
         println!("Failed to grant {} access because\n{}", member_id, why);
     }
 }

@@ -43,7 +43,6 @@ impl EventHandler for Handler {
                 }
             }
         }
-
         // // Review the voice channel they're joining
         if let Some(new_id) = new.channel_id {
             if let Some(room) = get_room(serving, &new_id) {

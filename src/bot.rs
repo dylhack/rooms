@@ -23,6 +23,7 @@ pub async fn start(config: Config) {
         })
         .group(&commands::ADMINCOMMANDS_GROUP)
         .group(&commands::COMMANDS_GROUP);
+
     let mut client = Client::new(&config.token)
         .framework(framework)
         .event_handler(Handler)

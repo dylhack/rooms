@@ -1,5 +1,4 @@
-use crate::bot::util::get_channels;
-use crate::bot::util::grant_access;
+use crate::bot::util::{get_channels, grant_access, revoke_access};
 use crate::config::Room;
 use serenity::client::Context;
 use serenity::model::prelude::*;
@@ -17,37 +16,51 @@ pub async fn review(ctx: &Context, room: &Room) {
         None => return,
     }
 
-    let mut members: Vec<Member>;
+    let mut members_in_vc: Vec<Member>;
 
     match voice.members(&ctx).await {
-        Ok(_members) => members = _members,
+        Ok(_members) => members_in_vc = _members,
         Err(_) => return,
     }
 
-    let mut i = 0;
-    while i != members.len() {
-        let member = &members[i].clone();
-        let user = &member.user;
-        if let Ok(perms) = text.permissions_for_user(&ctx, &user.id).await {
-            if !perms.read_messages() {
-                grant_access(&ctx, &text, user.id).await;
-                members.remove(i);
+    for perm in &text.permission_overwrites {
+        match perm.kind {
+            PermissionOverwriteType::Member(user_id) => {
+                let (is_in_vc, i) = in_vc(user_id, &members_in_vc);
+
+                // Remove them from the text channel if they're not
+                // in the voice channel.
+                if !is_in_vc {
+                    revoke_access(ctx, &text, user_id).await;
+
+                // Otherwise if they're in the vc and have access to the
+                // text-channel then remove them from the vec. The vec
+                // will be iterated through later and add the remaining
+                // members that can't see the text-channel
+                } else {
+                    if perm.allow.read_messages() {
+                        members_in_vc.remove(i);
+                    }
+                }
             }
-        }
-
-        i += 1;
-    }
-
-    i = 0;
-    while i != members.len() {
-        i += 1;
-        let member = &members[i].clone();
-        let user = &member.user;
-        if let Err(why) = text
-            .delete_permission(ctx, PermissionOverwriteType::Member(user.id))
-            .await
-        {
-            println!("Failed to revoke {} access because\n{}", user.id, why);
+            _ => continue,
         }
     }
+
+    // members_in_vc at this point is considered as in the voice channel,
+    // but they don't have access to the text channel
+    for member in members_in_vc.iter() {
+        grant_access(ctx, &text, member.user.id).await;
+    }
+}
+
+fn in_vc(user: UserId, members: &Vec<Member>) -> (bool, usize) {
+    let mut i: usize = 0;
+    for member in members.iter() {
+        if member.user.id == user {
+            return (true, i);
+        }
+        i += 1;
+    }
+    return (false, 0);
 }
