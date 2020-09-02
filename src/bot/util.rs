@@ -1,10 +1,9 @@
-use serenity::framework::standard::Args;
-use serenity::client::Context;
 use crate::config::Room;
-use std::sync::Arc;
-use serenity::prelude::RwLock;
+use serenity::client::Context;
+use serenity::framework::standard::Args;
 use serenity::model::prelude::*;
-
+use serenity::prelude::RwLock;
+use std::sync::Arc;
 
 // Get the channels a user might be talking about in a message.
 // args can be [<#channel id>, channel id] or reversed
@@ -19,15 +18,15 @@ pub fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, Channe
                 if let Ok(channel_id) = arg.parse::<u64>() {
                     voice_id = ChannelId(channel_id);
                 } else if arg.starts_with("<#") {
-                    if let Some(extract) = arg.get(2..arg.len() - 1) {  
+                    if let Some(extract) = arg.get(2..arg.len() - 1) {
                         if let Ok(channel_id) = extract.parse::<u64>() {
                             text_id = ChannelId(channel_id);
                         }
                     }
                 }
-            },
+            }
         }
-    };
+    }
 
     let text;
     let voice;
@@ -47,7 +46,10 @@ pub fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, Channe
 pub fn respond(ctx: &Context, msg: &Message, body: &String) {
     let res = format!("<@{}>, {}", msg.author.id, body);
     if let Err(why) = msg.channel_id.say(&ctx, &res) {
-        println!("Failed to send a message in #{} because\n{}", msg.channel_id, why);
+        println!(
+            "Failed to send a message in #{} because\n{}",
+            msg.channel_id, why
+        );
     }
 }
 
@@ -59,6 +61,10 @@ pub fn good(ctx: &Context, msg: &Message) {
 // bad reacts to a message when a user used a command incorrectly
 pub fn bad(ctx: &Context, msg: &Message) {
     react(ctx, msg, "❌".to_string())
+}
+
+pub fn warn(ctx: &Context, msg: &Message) {
+    react(ctx, msg, "⚠️".to_string())
 }
 
 fn react(ctx: &Context, msg: &Message, unicode: String) {

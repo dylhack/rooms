@@ -1,14 +1,15 @@
-use crate::config::Room;
-use serenity::framework::standard::CommandError;
-use crate::config::Serving;
-use crate::config::Config;
 use crate::bot::util;
+use crate::config::Config;
+use crate::config::Room;
+use crate::config::Serving;
 use serenity::client::Context;
 use serenity::framework::standard::macros::{check, command, group};
 use serenity::framework::standard::CheckResult::*;
+use serenity::framework::standard::CommandError;
 use serenity::framework::standard::Reason::User;
 use serenity::framework::standard::*;
 use serenity::model::channel::Message;
+use serenity::model::prelude::ChannelId;
 use serenity::model::Permissions;
 
 #[group()]
@@ -71,7 +72,7 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         serving = _s.clone();
     } else {
         if let Some(guild_id) = msg.guild_id {
-            serving = Serving{
+            serving = Serving {
                 guild_id,
                 rooms: Vec::<Room>::new(),
             };
@@ -87,17 +88,16 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let text;
     let voice;
 
-
     match channels {
         Some((_voice, _text)) => {
-            voice = _voice; 
+            voice = _voice;
             text = _text;
-        },
+        }
         None => {
             let res = "Please mention a text channel and ID of the voice channel.".to_string();
             util::bad(ctx, msg);
             util::respond(ctx, msg, &res);
-            return Err(CommandError(res))
+            return Err(CommandError(res));
         }
     }
 
@@ -111,12 +111,11 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 res = "That text channel is already linked with something.".to_string();
             }
             util::respond(ctx, msg, &res);
-            return Err(CommandError(res))
+            return Err(CommandError(res));
         }
     }
 
-
-    let room = Room{
+    let room = Room {
         voice_id: voice.id(),
         text_id: text.id(),
     };
@@ -133,9 +132,11 @@ fn link(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 // Args = #channel or channel ID
 fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
-    let mut data = ctx.data.write();
-    let mut config = data.get_mut::<Config>().unwrap().clone();
-
+    let mut config;
+    {
+        let mut data = ctx.data.write();
+        config = data.get_mut::<Config>().unwrap().clone();
+    }
 
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s.clone();
@@ -144,38 +145,73 @@ fn unlink(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let mut update = |serving: Serving| {
-        config.serving.insert(*serving.guild_id.as_u64(), serving);
-        data.insert::<Config>(config.clone());
-    };
-
-    let channel_id = Vec::<ChannelId>::new();
-    for arg in args.iter::<String>() {
-
+    let mut channel_ids = Vec::<ChannelId>::new();
+    for _arg in args.iter::<String>() {
+        match _arg {
+            Ok(arg) => {
+                if arg.starts_with("<#") {
+                    if let Some(extract) = arg.get(2..arg.len() - 1) {
+                        if let Ok(channel_id) = extract.parse::<u64>() {
+                            channel_ids.push(ChannelId(channel_id));
+                        }
+                    }
+                } else if let Ok(channel_id) = arg.parse::<u64>() {
+                    channel_ids.push(ChannelId(channel_id));
+                }
+            }
+            Err(_) => {
+                break;
+            }
+        }
     }
-    if let Some(channels) = &msg.mention_channels {
-        if !channels.is_empty() {
-            let mut unlinked = String::from("Unlinked: \n");
-            for channel in channels.iter() {
-                let mut i = 0;
+
+    let mut unlinked = String::new();
+    let mut not_unlinked = String::new();
+
+    for channel_id in channel_ids {
+        let mut i = 0;
+        match channel_id.to_channel(&ctx) {
+            Ok(channel) => {
                 for room in serving.rooms.clone().iter() {
-                    if room.text_id.as_u64() == channel.id.as_u64() {
+                    if room.text_id == channel.id() {
+                        if unlinked.is_empty() {
+                            unlinked.push_str("Unlinked: \n");
+                        }
+
                         serving.rooms.remove(i);
-                        unlinked.push_str(format!(" - <#{}>\n", channel.id).as_str());
-                        continue;
+                        unlinked.push_str(format!(" - <#{}>\n", channel.id()).as_str());
+                        break;
                     }
                     i += 1;
                 }
             }
-            util::respond(ctx, msg, &unlinked);
-            util::good(ctx, msg);
-            update(serving);
-            
-            return Ok(());
+            Err(_) => {
+                if not_unlinked.is_empty() {
+                    not_unlinked.push_str("Couldn't Find: \n");
+                }
+                not_unlinked.push_str(format!(" - <#{}>", channel_id).as_str());
+            }
         }
     }
 
+    {
+        let mut data = ctx.data.write();
+        config.serving.insert(*serving.guild_id.as_u64(), serving);
+        config.save();
+        data.insert::<Config>(config.clone());
+    }
 
+    if !unlinked.is_empty() && not_unlinked.is_empty() {
+        util::respond(ctx, msg, &unlinked);
+        util::good(ctx, msg);
+    } else if unlinked.is_empty() && !not_unlinked.is_empty() {
+        util::respond(ctx, msg, &not_unlinked);
+        util::bad(ctx, msg);
+    } else if !unlinked.is_empty() && !not_unlinked.is_empty() {
+        util::respond(ctx, msg, &unlinked);
+        util::respond(ctx, msg, &not_unlinked);
+        util::warn(ctx, msg);
+    }
 
     Ok(())
 }
@@ -189,7 +225,11 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s;
     } else {
-        util::respond(&ctx, &msg, &"This server doesn't have any channels linked.".to_string());
+        util::respond(
+            &ctx,
+            &msg,
+            &"This server doesn't have any channels linked.".to_string(),
+        );
         util::good(ctx, msg);
         return Ok(());
     }
@@ -198,15 +238,13 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
 
     for room in serving.rooms.iter() {
         let with_name = |name: &String| -> String {
-            return format!(" - <#{}> -> {}\n", 
-                room.text_id.as_u64(), 
-                name,
-            );
+            return format!(" - <#{}> -> {}\n", room.text_id.as_u64(), name,);
         };
 
         let without_name = || -> String {
-            return format!(" - <#{}> -> <#{}>\n", 
-                room.text_id.as_u64(), 
+            return format!(
+                " - <#{}> -> <#{}>\n",
+                room.text_id.as_u64(),
                 room.voice_id.as_u64(),
             );
         };
@@ -220,7 +258,7 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
                 } else {
                     list_item = without_name();
                 }
-            },
+            }
             Err(_) => {
                 list_item = without_name();
             }

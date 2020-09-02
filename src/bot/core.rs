@@ -1,7 +1,7 @@
-use crate::config::Room;
-use crate::bot::util::grant_access;
-use serenity::client::Context;
 use crate::bot::util::get_channels;
+use crate::bot::util::grant_access;
+use crate::config::Room;
+use serenity::client::Context;
 use serenity::model::prelude::*;
 
 pub fn review(ctx: &Context, room: &Room) {

@@ -3,9 +3,8 @@ use crate::config::Config;
 use serenity::client::Client;
 use serenity::framework::StandardFramework;
 
-
-mod core;
 mod commands;
+mod core;
 mod events;
 mod util;
 
@@ -37,4 +36,3 @@ pub fn start(config: Config) {
         panic!("Failed to start bot because\n{}", why);
     }
 }
-
