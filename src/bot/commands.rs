@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::bot::util;
 use serenity::client::Context;
 use serenity::framework::standard::macros::{check, command, group};
 use serenity::framework::standard::CheckResult::*;
@@ -76,19 +77,50 @@ fn list(ctx: &mut Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read();
     let config = data.get::<Config>().unwrap();
     let serving;
-    let response;
 
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s;
     } else {
-        response = "This server doesn't have any channels linked.";
-        if let Err(why) = msg.channel_id.say(&ctx, response) {
-            println!("Failed to send message because\n{}",why);
-        }
+        util::respond(&ctx, &msg, &"This server doesn't have any channels linked.".to_string());
         return Ok(());
     }
 
-    let list = String::from("Linked Channels:\n");
+    let mut list = String::from("Linked Channels:\n");
+
+    for room in serving.rooms.iter() {
+        let with_name = |name: &String| -> String {
+            return format!(" - <#{}> -> {}\n", 
+                room.text_id.as_u64(), 
+                name,
+            );
+        };
+
+        let without_name = || -> String {
+            return format!(" - <#{}> -> <#{}>\n", 
+                room.text_id.as_u64(), 
+                room.voice_id.as_u64(),
+            );
+        };
+
+        let list_item: String;
+
+        match room.voice_id.to_channel(&ctx) {
+            Ok(voice) => {
+                if let Some(guild_chan) = voice.guild() {
+                    list_item = with_name(&guild_chan.read().name);
+                } else {
+                    list_item = without_name();
+                }
+            },
+            Err(_) => {
+                list_item = without_name();
+            }
+        }
+
+        list.push_str(list_item.as_str());
+    }
+
+    util::respond(&ctx, &msg, &list);
 
     Ok(())
 }

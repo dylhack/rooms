@@ -5,6 +5,12 @@ use serenity::prelude::RwLock;
 use serenity::model::prelude::*;
 
 
+pub fn respond(ctx: &Context, msg: &Message, body: &String) {
+    let res = format!("<@{}>, {}", msg.author.id, body);
+    if let Err(why) = msg.channel_id.say(&ctx, &res) {
+        println!("Failed to send a message in #{} because\n{}", msg.channel_id, why);
+    }
+}
 
 pub fn get_channels(
     ctx: &Context,
