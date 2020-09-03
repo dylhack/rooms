@@ -2,6 +2,7 @@ use crate::bot::core;
 use crate::config::{Config, Serving};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use tokio::task;
 
 pub struct Handler;
 
@@ -20,26 +21,36 @@ impl EventHandler for Handler {
         opt_old: Option<VoiceState>,
         new: VoiceState,
     ) {
-        let data = ctx.data.read().await;
-        let config = data.get::<Config>().expect("Failed to retrieve config");
-        let serving: &Serving;
+        let serving: Serving;
+        {
+            let data = ctx.data.read().await;
+            let config = data.get::<Config>().expect("Failed to retrieve config");
 
-        match opt_guild_id {
-            Some(guild_id) => {
-                if let Some(_serving) = config.serving.get(guild_id.as_u64()) {
-                    serving = _serving;
-                } else {
-                    return;
+            match opt_guild_id {
+                Some(guild_id) => {
+                    if let Some(_serving) = config.serving.get(guild_id.as_u64()) {
+                        serving = _serving.clone();
+                    } else {
+                        return;
+                    }
                 }
+                None => return,
             }
-            None => return,
         }
 
         // Review the voice channel they left
         if let Some(old) = opt_old {
-            core::review_state(&ctx, &serving, &old).await;
+            let ctx_clone = ctx.clone();
+            let serve_clone = serving.clone();
+            #[allow(unused_must_use)]
+            task::spawn_blocking(move || {
+                core::review_state(&ctx_clone, &serve_clone, &old);
+            });
         }
-        // Review the voice channel they're joining
-        core::review_state(&ctx, &serving, &new).await;
+
+        #[allow(unused_must_use)]
+        task::spawn_blocking(move || {
+            core::review_state(&ctx, &serving, &new);
+        });
     }
 }

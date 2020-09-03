@@ -6,12 +6,15 @@ use serenity::model::prelude::*;
 pub async fn review_state(ctx: &Context, serving: &Serving, state: &VoiceState) {
     if let Some(channel_id) = state.channel_id {
         if let Some(room) = get_room(&serving, &channel_id) {
-            review(&ctx, &room).await;
+            sync_room(&ctx, &room).await;
         }
     }
 }
 
-async fn review(ctx: &Context, room: &Room) {
+// sync_room is where all the magic happens. It will make sure the people in the voice channel can
+// see the linked text-channel. It also revokes access to the text-channel for the ones that aren't
+// in the voice-channel.
+async fn sync_room(ctx: &Context, room: &Room) {
     let channels = get_channels(ctx, room).await;
     let voice;
     let text;

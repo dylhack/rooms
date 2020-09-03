@@ -14,4 +14,4 @@ typemap = "0.3.3"
 
 [dependencies.tokio]
 version = "0.2.22"
-features = ["macros"]
+features = ["rt-core", "macros"]
