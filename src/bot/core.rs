@@ -1,9 +1,17 @@
 use crate::bot::util::{get_channels, grant_access, revoke_access};
-use crate::config::Room;
+use crate::config::{Room, Serving};
 use serenity::client::Context;
 use serenity::model::prelude::*;
 
-pub async fn review(ctx: &Context, room: &Room) {
+pub async fn review_state(ctx: &Context, serving: &Serving, state: &VoiceState) {
+    if let Some(channel_id) = state.channel_id {
+        if let Some(room) = get_room(&serving, &channel_id) {
+            review(&ctx, &room).await;
+        }
+    }
+}
+
+async fn review(ctx: &Context, room: &Room) {
     let channels = get_channels(ctx, room).await;
     let voice;
     let text;
@@ -63,4 +71,13 @@ fn in_vc(user: UserId, members: &Vec<Member>) -> (bool, usize) {
         i += 1;
     }
     return (false, 0);
+}
+
+fn get_room(serving: &Serving, id: &ChannelId) -> Option<Room> {
+    for room in serving.rooms.iter() {
+        if room.voice_id.as_u64() == id.as_u64() {
+            return Some(room.clone());
+        }
+    }
+    return None;
 }

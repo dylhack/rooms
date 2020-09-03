@@ -1,5 +1,5 @@
 use crate::bot::core;
-use crate::config::{Config, Room, Serving};
+use crate::config::{Config, Serving};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
@@ -37,26 +37,9 @@ impl EventHandler for Handler {
 
         // Review the voice channel they left
         if let Some(old) = opt_old {
-            if let Some(old_id) = old.channel_id {
-                if let Some(room) = get_room(serving, &old_id) {
-                    core::review(&ctx, &room).await;
-                }
-            }
+            core::review_state(&ctx, &serving, &old).await;
         }
-        // // Review the voice channel they're joining
-        if let Some(new_id) = new.channel_id {
-            if let Some(room) = get_room(serving, &new_id) {
-                core::review(&ctx, &room).await;
-            }
-        }
+        // Review the voice channel they're joining
+        core::review_state(&ctx, &serving, &new).await;
     }
-}
-
-fn get_room(serving: &Serving, id: &ChannelId) -> Option<Room> {
-    for room in serving.rooms.iter() {
-        if room.voice_id.as_u64() == id.as_u64() {
-            return Some(room.clone());
-        }
-    }
-    return None;
 }
