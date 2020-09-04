@@ -3,7 +3,7 @@ use crate::config::{Config, Serving};
 use log::info;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use tokio::task;
+
 
 pub struct Handler;
 
@@ -43,15 +43,9 @@ impl EventHandler for Handler {
         if let Some(old) = opt_old {
             let ctx_clone = ctx.clone();
             let serve_clone = serving.clone();
-            #[allow(unused_must_use)]
-            task::spawn_blocking(move || {
-                core::review_state(&ctx_clone, &serve_clone, &old);
-            });
+            core::review_state(&ctx_clone, &serve_clone, &old).await;
         }
-
-        #[allow(unused_must_use)]
-        task::spawn_blocking(move || {
-            core::review_state(&ctx, &serving, &new);
-        });
+        // Review the voice channel they joined
+        core::review_state(&ctx, &serving, &new).await;
     }
 }
