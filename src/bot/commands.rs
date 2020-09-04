@@ -1,5 +1,6 @@
 use crate::bot::util;
 use crate::config::{Config, Room, Serving};
+use log::{info, warn};
 use serenity::client::Context;
 use serenity::framework::standard::macros::{check, command, group};
 use serenity::framework::standard::CheckResult::{Failure, Success};
@@ -20,36 +21,68 @@ pub struct Commands;
 #[name("auth")]
 async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let guild_id;
+    
+    let log = |msg: &Message| {
+        let user = &msg.author;
+        info!(
+            "Command Execution\n
+            User: {}#{}\n
+            Link: {}", 
+            user.name, user.discriminator, 
+            msg.link(),
+        );
+    };
 
+    let fail_log = |msg: &Message, reason: &String| {
+        let user = &msg.author;
+        warn!(
+            "Failed Command Execution\n
+            User: {}#{}\n
+            Link: {}\n
+            Reason: {}", 
+            user.name, user.discriminator, 
+            msg.link(),
+            reason,
+        );
+    };
+
+    // Make sure they're executing the command in a guild.
     if let Some(_guild_id) = msg.guild_id {
         guild_id = _guild_id;
     } else {
-        return Failure(User(
-            "This command needs to be executed in a guild.".to_string(),
-        ));
+        let reason = "This command needs to be executed in a guild.".to_string();
+        fail_log(&msg, &reason);
+        return Failure(User(reason));
     }
 
     let guild;
     if let Some(_guild) = guild_id.to_guild_cached(ctx).await {
         guild = _guild;
     } else {
-        return Failure(User("Failed to fetch this guild in cache.".to_string()));
+        let reason = "Failed to fetch this guild in cache.".to_string();
+        fail_log(&msg, &reason);
+        return Failure(User(reason));
     }
+
+    // Check if they have the require perms. See check_perms to see what permissions are needed   
     let mut perms = guild.member_permissions(msg.author.id);
 
+
     if check_perms(&perms) {
+        log(&msg);
         return Success;
     }
 
     perms = guild.user_permissions_in(msg.channel_id, msg.author.id);
 
     if check_perms(&perms) {
+        log(&msg);
         return Success;
     }
 
-    return Failure(User(
-        "You miss the required permissions to run this command.".to_string(),
-    ));
+    let reason = "You miss the required permissions to run this command.".to_string();
+    fail_log(&msg, &reason);
+    return Failure(User(reason));
 }
 
 fn check_perms(perms: &Permissions) -> bool {

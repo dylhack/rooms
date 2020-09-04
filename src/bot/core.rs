@@ -1,5 +1,6 @@
 use crate::bot::util::{get_channels, grant_access, revoke_access};
 use crate::config::{Room, Serving};
+use log::{info};
 use serenity::client::Context;
 use serenity::model::prelude::*;
 
@@ -27,6 +28,7 @@ async fn sync_room(ctx: &Context, room: &Room) {
         None => return,
     }
 
+    info!("Syncing {} and #{}", voice.name, text.name);
     let mut members_in_vc: Vec<Member>;
 
     match voice.members(&ctx).await {

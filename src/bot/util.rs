@@ -1,4 +1,5 @@
 use crate::config::Room;
+use log::{info, warn};
 use serenity::client::Context;
 use serenity::framework::standard::Args;
 use serenity::model::prelude::*;
@@ -44,7 +45,7 @@ pub async fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, 
 pub async fn respond(ctx: &Context, msg: &Message, body: &String) {
     let res = format!("<@{}>, {}", msg.author.id, body);
     if let Err(why) = msg.channel_id.say(&ctx, &res).await {
-        println!(
+        warn!(
             "Failed to send a message in #{} because\n{}",
             msg.channel_id, why
         );
@@ -107,8 +108,9 @@ pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId)
         kind: PermissionOverwriteType::Member(member_id),
     };
 
-    manage_access(ctx, text, &overwrite, member_id).await;
-    println!("Granted access for {} in {}", member_id, text.id);
+    if manage_access(ctx, text, &overwrite, member_id).await {
+        info!("Granted access for {} in #{}", member_id, text.name);
+    }
 }
 
 pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
@@ -118,8 +120,9 @@ pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId
         kind: PermissionOverwriteType::Member(member_id),
     };
 
-    manage_access(ctx, text, &overwrite, member_id).await;
-    println!("Revoked access for {} in {}", member_id, text.id);
+    if manage_access(ctx, text, &overwrite, member_id).await {
+        info!("Revoked access for {} in #{}", member_id, text.name);
+    }
 }
 
 async fn manage_access(
@@ -127,8 +130,11 @@ async fn manage_access(
     text: &GuildChannel,
     overwrite: &PermissionOverwrite,
     member_id: UserId,
-) {
+) -> bool {
     if let Err(why) = text.create_permission(ctx, overwrite).await {
-        println!("Failed to grant {} access because\n{}", member_id, why);
+        warn!("Failed to grant {} access because\n{}", member_id, why);
+        return false;
+    } else {
+        return true;
     }
 }

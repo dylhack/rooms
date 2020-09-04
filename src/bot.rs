@@ -1,3 +1,4 @@
+use log::{warn};
 use crate::bot::events::Handler;
 use crate::config::Config;
 use serenity::client::Client;
@@ -35,7 +36,7 @@ pub async fn start(config: Config) {
         data.insert::<Config>(config);
     }
 
-    if let Err(_) = client.start().await {
-        println!("Failed to login, is the token correct?");
+    if let Err(e) = client.start().await {
+        warn!("Failed to login, is the token correct?\n{}", e);
     }
 }

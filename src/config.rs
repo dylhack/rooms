@@ -1,3 +1,4 @@
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
 use serenity::model::id::GuildId;
@@ -39,6 +40,7 @@ impl Config {
                     location,
                 };
                 conf.save();
+                info!("Created a new config at {}", &conf.location);
                 return conf;
             }
         }
@@ -51,8 +53,8 @@ impl Config {
                 file.write_all(serialized.as_bytes())
                     .expect("Failed to write to config");
             }
-            Err(e) => {
-                panic!("Failed to save config to {}\n{}", self.location, e);
+            Err(_) => {
+                panic!("Failed to save config to {}", self.location);
             }
         }
     }
