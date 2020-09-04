@@ -27,8 +27,10 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         info!(
             "Command Execution\n
             User: {}#{}\n
+            Command: {}\n
             Link: {}", 
-            user.name, user.discriminator, 
+            user.name, user.discriminator,
+            msg.content, 
             msg.link(),
         );
     };
@@ -38,9 +40,11 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         warn!(
             "Failed Command Execution\n
             User: {}#{}\n
+            Command: {}\n
             Link: {}\n
             Reason: {}", 
             user.name, user.discriminator, 
+            msg.content,
             msg.link(),
             reason,
         );
