@@ -1,5 +1,6 @@
 use crate::bot::core;
 use crate::config::{Config, Serving};
+use log::info;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use tokio::task;
@@ -11,7 +12,7 @@ impl EventHandler for Handler {
     async fn ready(&self, _ctx: Context, rdy: Ready) {
         let us = &rdy.user;
 
-        println!("Ready as {}#{}", us.name, us.discriminator);
+        info!("Ready as {}", us.tag());
     }
 
     async fn voice_state_update(
