@@ -9,12 +9,6 @@ mod config;
 async fn main() {
 	SimpleLogger::new()
         .with_level(LevelFilter::Info)
-        .with_module_level("serenity", LevelFilter::Off)
-        .with_module_level("reqwest", LevelFilter::Off)
-        .with_module_level("rustls", LevelFilter::Off)
-        .with_module_level("hyper", LevelFilter::Off)
-        .with_module_level("async_tungstenite", LevelFilter::Off)
-        .with_module_level("tungstenite", LevelFilter::Off)
 		.init()
 		.unwrap();
 	info!("Starting...");
