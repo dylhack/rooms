@@ -68,7 +68,7 @@ impl Config {
                 };
 
                 match serde_yaml::from_str(&contents) {
-                    Ok(des) => Some(des),
+                    Ok(deserialized) => Some(deserialized),
                     Err(_) => None,
                 }
             }
