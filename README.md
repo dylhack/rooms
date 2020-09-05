@@ -38,3 +38,6 @@ Now you can execute the rooms binary. Upon executing it for the first time it wi
 $ ./rooms
 Please fill out the config.yml
 ```
+
+### Notes
+Set a `CONFIG_PATH` enviroment variable to set a custom path for the config.yml

@@ -4,8 +4,11 @@ use serde_yaml;
 use serenity::model::id::GuildId;
 use serenity::model::prelude::ChannelId;
 use std::collections::BTreeMap;
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
+
+const DEFAULT_LOCATION: &'static str = "./config.yml";
 
 // Serving represents a guild the bot is serving
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,41 +28,42 @@ pub struct Config {
     pub token: String,
     pub prefix: String,
     pub serving: BTreeMap<u64, Serving>,
-    location: String,
 }
 
 impl Config {
-    pub fn new(location: String) -> Config {
-        match Config::retrieve(&location) {
+    pub fn new() -> Config {
+        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
+        match Config::retrieve() {
             Some(conf) => conf,
             None => {
                 let conf = Config {
                     token: String::new(),
                     prefix: String::from("!"),
                     serving: BTreeMap::new(),
-                    location,
                 };
                 conf.save();
-                info!("Created a new config at {}", &conf.location);
+                info!("Created a new config at {}", &location);
                 return conf;
             }
         }
     }
 
     pub fn save(&self) {
+        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
         let serialized = serde_yaml::to_string(&self).expect("Failed to serialize config.");
-        match File::create(&self.location) {
+        match File::create(&location) {
             Ok(mut file) => {
                 file.write_all(serialized.as_bytes())
                     .expect("Failed to write to config");
             }
             Err(_) => {
-                panic!("Failed to save config to {}", self.location);
+                panic!("Failed to save config to {}", &location);
             }
         }
     }
 
-    fn retrieve(location: &String) -> Option<Config> {
+    fn retrieve() -> Option<Config> {
+        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
         match File::open(location) {
             Ok(mut file) => {
                 let mut contents = String::new();

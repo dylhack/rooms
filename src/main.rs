@@ -12,7 +12,7 @@ async fn main() {
 		.init()
 		.unwrap();
 	info!("Starting...");
-    let config = Config::new("./config.yml".to_string());
+    let config = Config::new();
 
     if config.token.is_empty() {
         warn!("Please fill out the config.yml");
