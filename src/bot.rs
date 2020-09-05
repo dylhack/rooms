@@ -16,14 +16,14 @@ impl TypeMapKey for Config {
 
 pub async fn start(config: Config) {
     let framework = StandardFramework::new()
+        .group(&commands::ADMINCOMMANDS_GROUP)
+        .group(&commands::COMMANDS_GROUP)
         .configure(|c| {
             c.prefix(&config.prefix);
             c.allow_dm(false);
             c.case_insensitivity(true);
             return c;
-        })
-        .group(&commands::ADMINCOMMANDS_GROUP)
-        .group(&commands::COMMANDS_GROUP);
+        });
 
     let mut client = Client::new(&config.token)
         .framework(framework)
