@@ -9,10 +9,18 @@ pub struct Handler;
 
 #[serenity::async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _ctx: Context, rdy: Ready) {
+    async fn ready(&self, ctx: Context, rdy: Ready) {
+        let perms = Permissions::from_bits(268438592).unwrap();
         let us = &rdy.user;
-
-        info!("Ready as {}", us.tag());
+        let guilds = &rdy.guilds;
+        info!("
+Ready as {}
+ * Serving {} guilds
+ * Invite URL: {}",
+            us.tag(),
+            guilds.len(),
+            us.invite_url(&ctx, perms).await.unwrap(),
+        );
     }
 
     async fn voice_state_update(
