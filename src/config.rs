@@ -8,6 +8,8 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 
+// For getting a custom config path
+const ENV_VAR: &'static str = "CONFIG_PATH";
 const DEFAULT_LOCATION: &'static str = "./config.yml";
 
 // Serving represents a guild the bot is serving
@@ -32,7 +34,7 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Config {
-        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
+        let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         match Config::retrieve() {
             Some(conf) => conf,
             None => {
@@ -49,7 +51,7 @@ impl Config {
     }
 
     pub fn save(&self) {
-        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
+        let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         let serialized = serde_yaml::to_string(&self).expect("Failed to serialize config.");
         match File::create(&location) {
             Ok(mut file) => {
@@ -63,7 +65,7 @@ impl Config {
     }
 
     fn retrieve() -> Option<Config> {
-        let location = env::var("CONFIG_PATH").unwrap_or(DEFAULT_LOCATION.to_string());
+        let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         match File::open(location) {
             Ok(mut file) => {
                 let mut contents = String::new();
