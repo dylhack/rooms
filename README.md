@@ -10,7 +10,7 @@ To add link a text-channel with a voice channel
  * .link `#channel` `voice channel ID`
 
 To remove a link
- * .unlink `#channel` or `voice channel ID`
+ * .unlink `#text-channel` or `voice channel ID`
 
 To list all your linked channels
  * .list
@@ -26,17 +26,17 @@ To list all your linked channels
 Open up your terminal / command line and run the following commands
 
 ```sh
-$ git clone https://github.com/dylhack/rooms
-$ cd rooms/
-$ cargo build --release
-$ cp ./target/release/rooms .
+git clone https://github.com/dylhack/rooms rooms
+cd ./rooms
+cargo build --release
+cp ./target/release/rooms .
 ```
 
 ### Running
 Now you can execute the rooms binary. Upon executing it for the first time it will generate a 
 `config.yml` file.
 ```sh
-$ ./rooms
+./rooms
 Please fill out the config.yml
 ```
 
