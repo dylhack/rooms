@@ -29,7 +29,7 @@ Open up your terminal / command line and run the following commands
 git clone https://github.com/dylhack/rooms rooms
 cd ./rooms
 cargo build --release
-cp ./target/release/rooms .
+mv ./target/release/rooms .
 ```
 
 ### Running
