@@ -1,15 +1,16 @@
 # Rooms Bot
-This bot automatically hides text-channels until a user is in a "linked" voice channel.
+Rooms Bot links text-channel and voice-channels together. The text-channels are invisible until a 
+user joins the linked voice-channel.
 
 ## Active Bot
 [Click Here!](https://discord.com/oauth2/authorize?client_id=750816469557837926&scope=bot&permissions=268438592)
 
 ## Commands
 To add link a text-channel with a voice channel
- * .add `#channel` `voice channel ID`
+ * .link `#channel` `voice channel ID`
 
 To remove a link
- * .remove `#channel` or `voice channel ID`
+ * .unlink `#channel` or `voice channel ID`
 
 To list all your linked channels
  * .list
