@@ -33,6 +33,7 @@ pub struct Config {
 }
 
 impl Config {
+    // new will create a new config.yml if one isn't present at the default or custom path.
     pub fn new() -> Config {
         let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         match Config::retrieve() {
@@ -50,6 +51,7 @@ impl Config {
         }
     }
 
+    // save saves the current state of Config
     pub fn save(&self) {
         let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         let serialized = serde_yaml::to_string(&self).expect("Failed to serialize config.");
@@ -64,6 +66,7 @@ impl Config {
         }
     }
 
+    // retrieve returns the current config.yml
     fn retrieve() -> Option<Config> {
         let location = env::var(ENV_VAR).unwrap_or(DEFAULT_LOCATION.to_string());
         match File::open(location) {

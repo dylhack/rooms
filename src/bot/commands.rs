@@ -19,9 +19,12 @@ pub struct Commands;
 
 #[check()]
 #[name("auth")]
+// auth checks if someone has the right perms to run the link and unlink commands. The current
+// required permissions are: Manage Channels (bits: 16)
 async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let guild_id;
     
+    // log reports when a user has the required permissions.
     let log = |msg: &Message| {
         let user = &msg.author;
         info!("\nCommand Execution\n * User: {}\n * Command: {}\n * Link: {}", 
@@ -31,6 +34,7 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         );
     };
 
+    // fail_log reports when a user doesn't have the require permissions.
     let fail_log = |msg: &Message, reason: &String| {
         let user = &msg.author;
         warn!("\nFailed Command Execution\nUser: {}\n * Command: {}\n * Link: {}\n * Reason: {}", 
@@ -59,7 +63,8 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         return Failure(User(reason));
     }
 
-    // Check if they have the require perms. See check_perms to see what permissions are needed   
+    // Check if they have the required permissions. See check_perms 
+    // to see what permissions are needed   
     let mut perms = guild.member_permissions(msg.author.id);
 
 
@@ -68,6 +73,7 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         return Success;
     }
 
+    // check if they have "manage channel" in the channel that they're executing the command.
     perms = guild.user_permissions_in(msg.channel_id, msg.author.id);
 
     if check_perms(&perms) {
@@ -80,19 +86,27 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     return Failure(User(reason));
 }
 
+// check_perms compliments auth. It makes sure that the user running a command has administrator and
+// or "manage channels" (bits: 16)
 fn check_perms(perms: &Permissions) -> bool {
     return perms.administrator() || perms.manage_channels();
 }
 
 #[command]
+// link allows users to link a text-channel and voice-channel together. When a voice and text 
+// channel are linked together it's called a "Room" and every guild has it's own vector of rooms 
+// stored in the config.
+// args = [#text-channel, voice channel ID] or [voice channel ID, #text-channel]
 async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut data = ctx.data.write().await;
     let mut config = data.get_mut::<Config>().unwrap().clone();
     let mut serving;
 
+    // Get the vector of rooms for this guild.
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s.clone();
     } else {
+        // if they don't have on then make one.
         if let Some(guild_id) = msg.guild_id {
             serving = Serving {
                 guild_id,
@@ -106,6 +120,7 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    // parse_channels will get us the channels the user is referring to in their message.
     let channels = util::parse_channels(ctx, &mut args).await;
     let text;
     let voice;
@@ -115,6 +130,8 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             voice = _voice;
             text = _text;
         }
+        // If parse_channels didn't return anything then the user didn't provide two channels or
+        // mistakenly two of the same type of channel.
         None => {
             let res = "Please mention a text channel and ID of the voice channel.".to_string();
             util::bad(ctx, msg).await;
@@ -123,6 +140,8 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    // Iterate through the guild's rooms and make sure the channels they provided aren't already
+    // linked with something else.
     for room in serving.rooms.iter() {
         if room.voice_id == voice.id() || room.text_id == text.id() {
             util::bad(ctx, msg).await;
@@ -137,21 +156,26 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    // Finally link the channels together and establish a room.
     let room = Room {
         voice_id: voice.id(),
         text_id: text.id(),
     };
 
+    // Save it to the config
     serving.rooms.push(room);
     config.serving.insert(*serving.guild_id.as_u64(), serving);
     config.save();
     data.insert::<Config>(config.clone());
+    // React to their message to let them know everything went right.
     util::good(ctx, msg).await;
     Ok(())
 }
 
-// Args = #channel or channel ID
 #[command]
+// unlink will remove a link between a text-channel and voice-channel
+// args can be a vector of #text-channels, voice channel IDs, or a combination. It
+// will unlinked all the channels provided (so essentially you can chain the channels.)
 async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
     let mut config;
@@ -160,6 +184,7 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         config = data.get_mut::<Config>().unwrap().clone();
     }
 
+    // Get all the rooms for the guild.
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s.clone();
     } else {
@@ -167,6 +192,7 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
+    // channel_ids are all the channels the user is talking about unlinking.
     let mut channel_ids = Vec::<ChannelId>::new();
     for _arg in args.iter::<String>() {
         match _arg {
@@ -187,9 +213,12 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    // List all the channels successfully unlinked
     let mut unlinked = String::new();
+    // List all the channels failed to unlink
     let mut not_unlinked = String::new();
 
+    // Go through all the channels and unlink them.
     for channel_id in channel_ids {
         let mut i = 0;
         match channel_id.to_channel(ctx).await {
@@ -216,6 +245,7 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    // After all the channels are unlinked save it back into the config.
     {
         let mut data = ctx.data.write().await;
         config.serving.insert(*serving.guild_id.as_u64(), serving);
@@ -223,12 +253,17 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         data.insert::<Config>(config.clone());
     }
 
+    // If all the channels were unlinked successfully
     if !unlinked.is_empty() && not_unlinked.is_empty() {
         util::respond(ctx, msg, &unlinked).await;
         util::good(ctx, msg).await;
+
+    // If none of the channels they gave were unlinked successfully
     } else if unlinked.is_empty() && !not_unlinked.is_empty() {
         util::respond(ctx, msg, &not_unlinked).await;
         util::bad(ctx, msg).await;
+
+    // else if there were some unlinekd and some not then give them a warning.
     } else if !unlinked.is_empty() && !not_unlinked.is_empty() {
         util::respond(ctx, msg, &unlinked).await;
         util::respond(ctx, msg, &not_unlinked).await;
@@ -239,31 +274,42 @@ async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 #[command]
+// list will send a message with all the channels that are linked with each other.
+// output example:
+// Linked Channels:
+// - <#text-channel ID> -> voice channel name
+// - <#text-channel ID> -> voice channel name
 async fn list(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
     let config = data.get::<Config>().unwrap();
     let serving;
 
+    // Get the rooms for this guild
     if let Some(_s) = config.serving.get(msg.guild_id.unwrap().as_u64()) {
         serving = _s;
     } else {
+        // if they don't have any rooms then tell them there are no channels linked.
         util::respond(
             &ctx,
             &msg,
-            &"This server doesn't have any channels linked.".to_string(),
+            &"This server has no rooms".to_string(),
         )
         .await;
         util::good(ctx, msg).await;
         return Ok(());
     }
 
+    // This is what's responded
     let mut list = String::from("Linked Channels:\n");
 
+    // Iterate through all the rooms and list them
     for room in serving.rooms.iter() {
+        // This is if we got the voice channel *name* successfully
         let with_name = |name: &String| -> String {
-            return format!(" - <#{}> -> {}\n", room.text_id.as_u64(), name,);
+            return format!(" - <#{}> -> {}\n", room.text_id.as_u64(), name);
         };
-
+        // Otherwise we can use the Discord client to find the name for us by using this format
+        // <#ID> it will look ugly but it works.
         let without_name = || -> String {
             return format!(
                 " - <#{}> -> <#{}>\n",

@@ -42,6 +42,7 @@ pub async fn parse_channels(ctx: &Context, args: &mut Args) -> Option<(Channel, 
     return Some((voice, text));
 }
 
+// respond intakes a body and responds to a user.
 pub async fn respond(ctx: &Context, msg: &Message, body: &String) {
     let res = format!("<@{}>, {}", msg.author.id, body);
     if let Err(why) = msg.channel_id.say(&ctx, &res).await {
@@ -62,6 +63,7 @@ pub async fn bad(ctx: &Context, msg: &Message) {
     react(ctx, msg, "❌".to_string()).await
 }
 
+// warn reacts to a message when a user runs a command but something unexpected occurred
 pub async fn warn(ctx: &Context, msg: &Message) {
     react(ctx, msg, "⚠️".to_string()).await
 }
@@ -72,6 +74,8 @@ async fn react(ctx: &Context, msg: &Message, unicode: String) {
     }
 }
 
+// get_channels will get the text-channel and voice-channel of a Room. If one of them failed then
+// None will be returned.
 pub async fn get_channels(ctx: &Context, room: &Room) -> Option<(GuildChannel, GuildChannel)> {
     let mut channel_rw;
 
@@ -101,6 +105,7 @@ pub async fn get_channels(ctx: &Context, room: &Room) -> Option<(GuildChannel, G
     Some((voice_channel, text_channel))
 }
 
+// grant_access gives people of a voice channel access to the linked text-channel
 pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
     let overwrite = PermissionOverwrite {
         allow: Permissions::SEND_MESSAGES,
@@ -113,6 +118,7 @@ pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId)
     }
 }
 
+// revoke_access revokes people outside of a voice channel from the linked text-channel
 pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
     let overwrite = PermissionOverwrite {
         allow: Permissions::empty(),

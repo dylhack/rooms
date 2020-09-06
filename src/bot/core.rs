@@ -4,6 +4,8 @@ use log::{info};
 use serenity::client::Context;
 use serenity::model::prelude::*;
 
+// review_state reviews a member's voice state and checks if the voice channel they joined or left
+// needs synced by sync_rooms.
 pub async fn review_state(ctx: &Context, serving: &Serving, state: &VoiceState) {
     if let Some(channel_id) = state.channel_id {
         if let Some(room) = get_room(&serving, &channel_id) {
@@ -67,6 +69,7 @@ async fn sync_room(ctx: &Context, room: &Room) {
     }
 }
 
+// Check if a given user ID is a voice channel.
 fn in_vc(user: UserId, members: &Vec<Member>) -> (bool, usize) {
     let mut i: usize = 0;
     for member in members.iter() {
@@ -78,6 +81,7 @@ fn in_vc(user: UserId, members: &Vec<Member>) -> (bool, usize) {
     return (false, 0);
 }
 
+// Get the text-channel associated with a voice channel in a guild (Serving).
 fn get_room(serving: &Serving, id: &ChannelId) -> Option<Room> {
     for room in serving.rooms.iter() {
         if room.voice_id.as_u64() == id.as_u64() {
