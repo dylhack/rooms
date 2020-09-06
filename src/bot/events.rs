@@ -4,7 +4,6 @@ use log::info;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
-
 pub struct Handler;
 
 #[serenity::async_trait]
@@ -13,7 +12,8 @@ impl EventHandler for Handler {
         let perms = Permissions::from_bits(268438592).unwrap();
         let us = &rdy.user;
         let guilds = &rdy.guilds;
-        info!("
+        info!(
+            "
 Ready as {}
  * Serving {} guilds
  * Invite URL: {}",

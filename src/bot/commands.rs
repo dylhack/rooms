@@ -23,11 +23,12 @@ pub struct Commands;
 // required permissions are: Manage Channels (bits: 16)
 async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let guild_id;
-    
+
     // log reports when a user has the required permissions.
     let log = |msg: &Message| {
         let user = &msg.author;
-        info!("\nCommand Execution\n * User: {}\n * Command: {}\n * Link: {}", 
+        info!(
+            "\nCommand Execution\n * User: {}\n * Command: {}\n * Link: {}",
             user.tag(),
             msg.content,
             msg.link(),
@@ -37,7 +38,8 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     // fail_log reports when a user doesn't have the require permissions.
     let fail_log = |msg: &Message, reason: &String| {
         let user = &msg.author;
-        warn!("\nFailed Command Execution\nUser: {}\n * Command: {}\n * Link: {}\n * Reason: {}", 
+        warn!(
+            "\nFailed Command Execution\nUser: {}\n * Command: {}\n * Link: {}\n * Reason: {}",
             user.tag(),
             msg.content,
             msg.link(),
@@ -63,10 +65,9 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
         return Failure(User(reason));
     }
 
-    // Check if they have the required permissions. See check_perms 
-    // to see what permissions are needed   
+    // Check if they have the required permissions. See check_perms
+    // to see what permissions are needed
     let mut perms = guild.member_permissions(msg.author.id);
-
 
     if check_perms(&perms) {
         log(&msg);
@@ -93,8 +94,8 @@ fn check_perms(perms: &Permissions) -> bool {
 }
 
 #[command]
-// link allows users to link a text-channel and voice-channel together. When a voice and text 
-// channel are linked together it's called a "Room" and every guild has it's own vector of rooms 
+// link allows users to link a text-channel and voice-channel together. When a voice and text
+// channel are linked together it's called a "Room" and every guild has it's own vector of rooms
 // stored in the config.
 // args = [#text-channel, voice channel ID] or [voice channel ID, #text-channel]
 async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -289,12 +290,7 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
         serving = _s;
     } else {
         // if they don't have any rooms then tell them there are no channels linked.
-        util::respond(
-            &ctx,
-            &msg,
-            &"This server has no rooms".to_string(),
-        )
-        .await;
+        util::respond(&ctx, &msg, &"This server has no rooms".to_string()).await;
         util::good(ctx, msg).await;
         return Ok(());
     }

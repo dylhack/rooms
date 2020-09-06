@@ -1,6 +1,6 @@
-use log::{warn};
 use crate::bot::events::Handler;
 use crate::config::Config;
+use log::warn;
 use serenity::client::Client;
 use serenity::framework::StandardFramework;
 use serenity::prelude::TypeMapKey;

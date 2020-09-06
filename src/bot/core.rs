@@ -1,6 +1,6 @@
 use crate::bot::util::{get_channels, grant_access, revoke_access};
 use crate::config::{Room, Serving};
-use log::{info};
+use log::info;
 use serenity::client::Context;
 use serenity::model::prelude::*;
 
