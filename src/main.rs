@@ -1,9 +1,9 @@
+mod bot;
+mod config;
+
 use crate::config::Config;
 use log::{info, warn, LevelFilter};
 use simple_logger::SimpleLogger;
-
-mod bot;
-mod config;
 
 #[tokio::main]
 async fn main() {

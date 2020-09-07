@@ -1,14 +1,14 @@
+mod commands;
+mod core;
+mod events;
+mod util;
+
 use crate::bot::events::Handler;
 use crate::config::Config;
 use log::warn;
 use serenity::client::Client;
 use serenity::framework::StandardFramework;
 use serenity::prelude::TypeMapKey;
-
-mod commands;
-mod core;
-mod events;
-mod util;
 
 impl TypeMapKey for Config {
     type Value = Config;
