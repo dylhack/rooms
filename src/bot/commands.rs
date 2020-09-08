@@ -28,7 +28,11 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let log = |msg: &Message| {
         let user = &msg.author;
         info!(
-            "\nCommand Execution\n * User: {}\n * Command: {}\n * Link: {}",
+            "
+Command Execution
+ * User: {}
+ * Command: {}
+ * Link: {}",
             user.tag(),
             msg.content,
             msg.link(),
@@ -39,7 +43,12 @@ async fn auth(ctx: &Context, msg: &Message) -> CheckResult {
     let fail_log = |msg: &Message, reason: &String| {
         let user = &msg.author;
         warn!(
-            "\nFailed Command Execution\nUser: {}\n * Command: {}\n * Link: {}\n * Reason: {}",
+            "
+Failed Command Execution
+ * User: {}
+ * Command: {}
+ * Link: {}
+ * Reason: {}",
             user.tag(),
             msg.content,
             msg.link(),
