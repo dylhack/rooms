@@ -108,7 +108,7 @@ pub async fn get_channels(ctx: &Context, room: &Room) -> Option<(GuildChannel, G
 // grant_access gives people of a voice channel access to the linked text-channel
 pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
     let overwrite = PermissionOverwrite {
-        allow: Permissions::SEND_MESSAGES,
+        allow: Permissions::READ_MESSAGES,
         deny: Permissions::empty(),
         kind: PermissionOverwriteType::Member(member_id),
     };
@@ -122,7 +122,7 @@ pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId)
 pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
     let overwrite = PermissionOverwrite {
         allow: Permissions::empty(),
-        deny: Permissions::SEND_MESSAGES,
+        deny: Permissions::READ_MESSAGES,
         kind: PermissionOverwriteType::Member(member_id),
     };
 
