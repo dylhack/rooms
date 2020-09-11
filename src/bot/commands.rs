@@ -309,32 +309,32 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
 
     // Iterate through all the rooms and list them
     for room in serving.rooms.iter() {
-        // This is if we got the voice channel *name* successfully
-        let with_name = |name: &String| -> String {
-            return format!(" - <#{}> -> {}\n", room.text_id.as_u64(), name);
-        };
-        // Otherwise we can use the Discord client to find the name for us by using this format
-        // <#ID> it will look ugly but it works.
-        let without_name = || -> String {
-            return format!(
-                " - <#{}> -> <#{}>\n",
-                room.text_id.as_u64(),
-                room.voice_id.as_u64(),
-            );
-        };
-
-        let list_item: String;
-
-        match room.voice_id.to_channel(ctx).await {
-            Ok(voice) => {
-                if let Some(guild_chan) = voice.guild() {
-                    list_item = with_name(&guild_chan.name);
+        let mut list_item: String;
+        match room.text_id.to_channel(ctx).await {
+            Ok(text) => {
+                if let Some(guild_chan) = text.guild() {
+                    list_item = format!(" - <#{}> -> ", &guild_chan.name);
                 } else {
-                    list_item = without_name();
+                    list_item = format!(" - {} -> ", room.text_id);
                 }
             }
             Err(_) => {
-                list_item = without_name();
+                list_item = format!(" - {} -> ", room.text_id);
+            }
+        }
+
+        match room.voice_id.to_channel(ctx).await {
+            Ok(voice) => {
+                let name_or_id;
+                if let Some(guild_chan) = voice.guild() {
+                    name_or_id = guild_chan.name;
+                } else {
+                    name_or_id = room.voice_id.to_string();
+                }
+                list_item += &format!("{}\n", name_or_id).to_string();
+            }
+            Err(_) => {
+                list_item += &format!("{}\n", &room.voice_id).to_string();
             }
         }
 
