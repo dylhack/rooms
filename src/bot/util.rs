@@ -137,6 +137,21 @@ async fn manage_access(
     overwrite: &PermissionOverwrite,
     member_id: UserId,
 ) -> bool {
+    // ignore bots
+    let is_bot;
+
+    if let Ok(user) = member_id.to_user(&ctx).await {
+        is_bot = user.bot;
+    } else {
+        // return false for safety
+        return false;
+    }
+
+    if is_bot {
+        return false;
+    }
+
+
     if let Err(why) = text.create_permission(ctx, overwrite).await {
         warn!("Failed to grant {} access because\n{}", member_id, why);
         return false;
