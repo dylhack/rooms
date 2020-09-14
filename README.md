@@ -7,13 +7,13 @@ user joins the linked voice-channel.
 
 ## Commands
 To add link a text-channel with a voice channel
- * .link `#channel` `voice channel ID`
+ * .rooms link `#channel` `voice channel ID`
 
 To remove a link
- * .unlink `#text-channel` or `voice channel ID`
+ * .rooms unlink `#text-channel` or `voice channel ID`
 
 To list all your linked channels
- * .list
+ * .rooms list
 
 
 ## Run Your own Instance
