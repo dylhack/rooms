@@ -3,7 +3,7 @@ Rooms Bot links text-channel and voice-channels together. The text-channels are 
 user joins the linked voice-channel.
 
 ## Active Bot
-[Click Here!](https://discord.com/oauth2/authorize?client_id=750816469557837926&scope=bot&permissions=268438592)
+[Click Here!](https://discord.com/oauth2/authorize?client_id=738719133331357756&scope=bot&permissions=268438592)
 
 ## Commands
 To add link a text-channel with a voice channel
