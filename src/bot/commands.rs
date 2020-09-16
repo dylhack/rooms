@@ -9,7 +9,7 @@ use serenity::framework::standard::*;
 use serenity::model::prelude::*;
 
 #[group()]
-#[commands(link, unlink)]
+#[commands(add, remove)]
 #[checks(auth)]
 pub struct AdminCommands;
 
@@ -107,7 +107,7 @@ fn check_perms(perms: &Permissions) -> bool {
 // channel are linked together it's called a "Room" and every guild has it's own vector of rooms
 // stored in the config.
 // args = [#text-channel, voice channel ID] or [voice channel ID, #text-channel]
-async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut data = ctx.data.write().await;
     let mut config = data.get_mut::<Config>().unwrap().clone();
     let mut serving;
@@ -186,7 +186,7 @@ async fn link(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 // unlink will remove a link between a text-channel and voice-channel
 // args can be a vector of #text-channels, voice channel IDs, or a combination. It
 // will unlinked all the channels provided (so essentially you can chain the channels.)
-async fn unlink(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut serving;
     let mut config;
     {
