@@ -312,8 +312,8 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
         let mut list_item: String;
         match room.text_id.to_channel(ctx).await {
             Ok(text) => {
-                if let Some(guild_chan) = text.guild() {
-                    list_item = format!(" - <#{}> -> ", &guild_chan.name);
+                if let Some(_) = text.guild() {
+                    list_item = format!(" - <#{}> -> ", &room.text_id);
                 } else {
                     list_item = format!(" - {} -> ", room.text_id);
                 }
