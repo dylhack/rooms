@@ -46,7 +46,10 @@ async fn sync_room(ctx: &Context, room: &Room) {
                 // Remove them from the text channel if they're not
                 // in the voice channel.
                 if !is_in_vc {
-                    revoke_access(ctx, &text, user_id).await;
+                    if perm.allow.read_messages() {
+                        revoke_access(ctx, &text, user_id).await;
+                    }
+
 
                 // Otherwise if they're in the vc and have access to the
                 // text-channel then remove them from the vec. The vec
