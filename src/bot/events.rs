@@ -6,6 +6,15 @@ use serenity::prelude::*;
 
 pub struct Handler;
 
+fn skip_review(new: &VoiceState, old_opt: &Option<VoiceState>) -> bool {
+    if old_opt.is_none() {
+        return false;
+    }
+    let old = old_opt.as_ref().unwrap();
+
+    return new.channel_id == old.channel_id;
+}
+
 #[serenity::async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, rdy: Ready) {
@@ -30,6 +39,10 @@ Ready as {}
         opt_old: Option<VoiceState>,
         new: VoiceState,
     ) {
+        if (skip_review(&new, &opt_old)) {
+            return;
+        }
+
         let serving: Serving;
         {
             let data = ctx.data.read().await;
