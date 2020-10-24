@@ -122,7 +122,7 @@ pub async fn grant_access(ctx: &Context, text: &GuildChannel, member_id: UserId)
 pub async fn revoke_access(ctx: &Context, text: &GuildChannel, member_id: UserId) {
     let overwrite = PermissionOverwrite {
         allow: Permissions::empty(),
-        deny: Permissions::READ_MESSAGES,
+        deny: Permissions::empty(),
         kind: PermissionOverwriteType::Member(member_id),
     };
 
